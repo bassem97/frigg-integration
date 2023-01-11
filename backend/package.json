@@ -16,8 +16,9 @@
         "start:staging": "sls offline --stage staging"
     },
     "dependencies": {
-        "@friggframework/api-module-salesforce": "^0.8.18",
         "@friggframework/api-module-connectwise": "^0.8.15",
+        "@friggframework/api-module-hubspot": "^0.8.18",
+        "@friggframework/api-module-salesforce": "^0.8.18",
         "@friggframework/assertions": "^1.0.5",
         "@friggframework/core": "^0.2.8",
         "@friggframework/database": "^1.0.7",

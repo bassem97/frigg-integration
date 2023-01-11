@@ -2,10 +2,12 @@ const { IntegrationManager: Parent } = require('@friggframework/integrations');
 const EntityManager = require('../entities/EntityManager');
 
 const salesforceIntegrationManager = require('./SalesforceIntegrationManager');
+const HubSpotIntegrationManager = require('./HubSpotIntegrationManager');
 
 class IntegrationManager extends Parent {
     static integrationManagerClasses = [
         salesforceIntegrationManager,
+        HubSpotIntegrationManager
     ];
 
     static integrationTypes = IntegrationManager.integrationManagerClasses.map(

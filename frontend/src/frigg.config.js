@@ -4,7 +4,7 @@ module.exports = {
 	componentLayout: 'default-horizontal',
 	componentFilter: {
 		active: true,
-		allTab: false,
+		allTab: true,
 		recentlyAddedTab: true,
 		installedTab: true,
 		categories: ['Marketing', 'Sales & CRM', 'Commerce', 'Social', 'Productivity', 'Finance'],
