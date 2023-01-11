@@ -1,0 +1,188 @@
+frameworkVersion: '>=3.17.0'
+service: create-frigg-app
+package:
+    individually: true
+provider:
+    name: aws
+    runtime: nodejs16.x
+    region: us-east-1
+    stage: ${opt:stage}
+    environment:
+        STAGE: ${opt:stage}
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+        EXAMPLE_POLL_WORKER_QUEUE: { Ref: ExamplePollWorkerQueue }
+    iamRoleStatements:
+        - Effect: Allow
+          Action:
+            - sqs:*
+          Resource:
+            - { 'Fn::GetAtt': ['ExamplePollWorkerQueue', 'Arn'] }
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource:
+            Ref: InternalErrorBridgeTopic
+
+plugins:
+    - serverless-webpack
+    - serverless-offline
+custom:
+    serverless-offline:
+        httpPort: 3001
+    ExamplePollWorkerQueue: ${self:service}--${self:provider.stage}-ExamplePollWorker
+    webpack:
+        webpackConfig: 'webpack.config.js' # Name of webpack configuration file
+        includeModules:
+            forceExclude:
+                - aws-sdk # Automatically included in AWS Lambda context
+        packager: 'npm' # Packager that will be used to package your external modules
+        excludeFiles:
+            - src/**/*.test.js # Provide a glob for files to ignore
+            - test/
+
+functions:
+    auth:
+        handler: ./src/handlers/http/auth.handler
+        environment: ${file(./src/configs/${self:provider.stage}.json)}
+        #    The following are a few example events you can configure
+        #    NOTE: Please make sure to change your handler code to work with those events
+        #    Check the event documentation for details
+        events:
+            - http:
+                  path: /api/integrations
+                  method: ANY
+                  cors: true
+            - http:
+                  path: /api/integrations/{proxy+}
+                  method: ANY
+                  cors: true
+            - http:
+                  path: /api/authorize
+                  method: ANY
+                  cors: true
+
+    user:
+        handler: ./src/handlers/http/user.handler
+        environment: ${file(./src/configs/${self:provider.stage}.json)}
+        events:
+            - http:
+                  path: /user/{proxy+}
+                  method: ANY
+                  cors: true
+
+    demo:
+        handler: ./src/handlers/http/demo.handler
+        environment: ${file(./src/configs/${self:provider.stage}.json)}
+        events:
+            - http:
+                  path: /api/demo/sample/{proxy+}
+                  method: ANY
+                  cors: true
+
+    pollWorker:
+        handler: ./src/handlers/examplePollWorker.handler
+        reservedConcurrency: 2
+        timeout: 900
+        environment: ${file(./src/configs/${self:provider.stage}.json)}
+        events:
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - ExamplePollWorkerQueue
+                          - Arn
+                   # This is the amount of the messages in the queue that will be sent to one handler at any
+                   # given time. IMPORTANT: if the handler errors it will put the entire batch in the queue
+                   # even if only one of the batches fails.
+                  batchSize: 1
+
+    exampleQueuer:
+        handler: ./src/handlers/exampleQueuer.handler
+        # the number of concurrent invocations allowed by this handler
+        reservedConcurrency: 10
+        events:
+            - schedule:
+                  name: ${self:service}-${self:provider.stage}-ExampleQueuer
+                  description: 'Scheduled cron for Example integration'
+                  rate: cron(0 * ? * * *)
+        timeout: 600
+        environment: ${file(./src/configs/${self:provider.stage}.json)}
+        onError:
+            Ref: InternalErrorBridgeTopic
+
+
+resources:
+    Resources:
+        ExamplePollWorkerQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: ${self:custom.ExamplePollWorkerQueue}
+                VisibilityTimeout: 10
+                MessageRetentionPeriod: 60
+                RedrivePolicy:
+                    maxReceiveCount: 1
+                    deadLetterTargetArn:
+                        Fn::GetAtt:
+                            - InternalErrorQueue
+                            - Arn
+        InternalErrorQueue:
+            Type: 'AWS::SQS::Queue'
+            Properties:
+                QueueName: internal-error-queue-${self:provider.stage}
+                MessageRetentionPeriod: 300
+
+        InternalErrorBridgeTopic:
+            Type: 'AWS::SNS::Topic'
+            Properties:
+                # Subscribe the SQS queue to the SNS topic
+                Subscription:
+                    - Protocol: sqs
+                      Endpoint:
+                          'Fn::GetAtt':
+                              - InternalErrorQueue
+                              - Arn
+
+        # Policy allows SNS to publish to the dead letter queue
+        InternalErrorBridgePolicy:
+            Type: AWS::SQS::QueuePolicy
+            Properties:
+                Queues:
+                    - Ref: InternalErrorQueue
+                PolicyDocument:
+                    Version: '2012-10-17'
+                    Statement:
+                        - Sid: 'Allow Dead Letter SNS to publish to SQS'
+                          Effect: Allow
+                          Principal:
+                              Service: 'sns.amazonaws.com'
+                          Resource:
+                              'Fn::GetAtt':
+                                  - InternalErrorQueue
+                                  - Arn
+                          Action:
+                              - SQS:SendMessage
+                              - SQS:SendMessageBatch
+                          Condition:
+                              ArnEquals:
+                                  aws:SourceArn:
+                                      Ref: InternalErrorBridgeTopic
+
+        ApiGatewayAlarm5xx:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+                AlarmDescription: API Gateway 5xx Errors
+                Namespace: AWS/ApiGateway
+                MetricName: 5XXError
+                Statistic: Sum
+                Threshold: 0
+                ComparisonOperator: GreaterThanThreshold
+                EvaluationPeriods: 1
+                Period: 60
+                AlarmActions:
+                    - Ref: InternalErrorBridgeTopic
+                Dimensions:
+                    - Name: ApiName
+                      Value:
+                          Fn::Join:
+                              - '-'
+                              - - ${self:provider.stage}
+                                - ${self:service}

@@ -1,0 +1,78 @@
+{
+    "name": "frigg-app-front-end",
+    "version": "0.1.0",
+    "private": true,
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@heroicons/react": "^1.0.6",
+        "@reduxjs/toolkit": "^1.8.1",
+        "@rjsf/bootstrap-4": "^3.0.0",
+        "@rjsf/core": "^3.0.0",
+        "@tailwindcss/forms": "^0.5.0",
+        "bootstrap": "^5.0.2",
+        "dotenv-expand": "^8.0.1",
+        "form-serialize": "^0.7.2",
+        "node-fetch": "^2.6.1",
+        "query-string": "^4.3.4",
+        "react": "^17.0.2",
+        "react-bootstrap": "^1.6.1",
+        "react-bootstrap-toggle": "^2.3.2",
+        "react-dom": "^17.0.2",
+        "react-helmet": "^6.1.0",
+        "react-icons": "^4.2.0",
+        "react-loader-spinner": "^4.0.0",
+        "react-redux": "^7.2.4",
+        "react-redux-loading-bar": "^5.0.4",
+        "react-responsive-modal": "^6.1.0",
+        "react-router-dom": "^5.2.0",
+        "react-scripts": "^5.0.0",
+        "react-toastify": "^8.2.0",
+        "react-toggle": "^4.1.2",
+        "redux": "^4.1.0",
+        "redux-thunk": "^2.3.0",
+        "validator": "^13.6.0",
+        "lodash": "^4.17.15"
+    },
+    "scripts": {
+        "test": "SET NODE_ENV=test && jest",
+        "start": "react-scripts start",
+        "build": "react-scripts build",
+        "eject": "react-scripts eject",
+        "ci": "npm install",
+        "lint": "eslint . && markdownlint .",
+        "lint:fix": "prettier --write --loglevel error . && eslint --fix . && markdownlint --fix ."
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "devDependencies": {
+        "@testing-library/jest-dom": "^5.14.1",
+        "@testing-library/react": "^12.0.0",
+        "@testing-library/user-event": "^13.1.9",
+        "autoprefixer": "^10.4.2",
+        "eslint-config-airbnb": "^18.2.1",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-json": "^3.1.0",
+        "eslint-plugin-jsx-a11y": "^6.4.1",
+        "eslint-plugin-markdown": "^2.2.0",
+        "eslint-plugin-no-only-tests": "^2.6.0",
+        "eslint-plugin-prettier": "^3.4.0",
+        "eslint-plugin-yaml": "^0.5.0",
+        "markdownlint-cli": "^0.31.1",
+        "nock": "^13.2.9",
+        "postcss": "^8.4.7",
+        "prettier": "^2.3.2",
+        "tailwindcss": "^3.0.23",
+        "typescript": "^4.3.5"
+    }
+}

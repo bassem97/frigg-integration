@@ -1,0 +1,16 @@
+{
+  "name": "my-app-integrations",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "devDependencies": {
+    "concurrently": "^7.2.1"
+  },
+  "scripts": {
+    "start": "concurrently \"cd backend && npm start\" \"cd frontend && npm start\"",
+    "test": "npm test -workspaces"
+  }
+}
